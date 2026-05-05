@@ -196,6 +196,7 @@ export function getDefaultGameState() {
     mapProgress: { currentZone: 1, unlockedZones: [1], clearedZones: [] as number[] },
     shopInventory: {} as Record<string, number>,
     tickCount: 0,
+    nextWanderingSpawnIn: 60,
   };
 }
 

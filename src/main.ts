@@ -1,8 +1,8 @@
-import { Application, Container, Graphics, Text, TextStyle, Ticker } from 'pixi.js';
+import { Application, Container, Graphics, Text, TextStyle } from 'pixi.js';
 import { createPixiApp, GAME_WIDTH } from './PixiApp';
 import { ResourceSystem_init, ResourceSystem_produceMaterials, ResourceSystem_get } from './systems/ResourceSystem';
 import { BuildingSystem_init, BuildingSystem_getLevel } from './systems/BuildingSystem';
-import { HeroSystem_init, HeroSystem_addTerritoryHero, HeroSystem_getTerritoryHeroes, HeroSystem_processWanderingTick, HeroSystem_processRestingTick } from './systems/HeroSystem';
+import { HeroSystem_init, HeroSystem_addTerritoryHero, HeroSystem_processWanderingTick, HeroSystem_processRestingTick } from './systems/HeroSystem';
 import { createTerritoryHero } from './data/gameData';
 
 // ═══════════════════════════════════════════════════════════════
@@ -21,11 +21,9 @@ interface FloatNumber {
 class FloatNumberRenderer {
   private floats: FloatNumber[] = [];
   private container: Container;
-  private gameWidth: number;
 
-  constructor(container: Container, gameWidth: number) {
+  constructor(container: Container) {
     this.container = container;
-    this.gameWidth = gameWidth;
   }
 
   spawn(text: string, x: number, y: number): void {
@@ -323,7 +321,7 @@ async function init() {
   });
 
   // Float number renderer
-  floatRenderer = new FloatNumberRenderer(app.stage, GAME_WIDTH);
+  floatRenderer = new FloatNumberRenderer(app.stage);
 
   // Bottom nav
   bottomNav = new BottomNav();

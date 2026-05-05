@@ -1,6 +1,6 @@
-import { HERO_CLASSES, WANDERING_HERO_TYPES, ZONES, createTerritoryHero, createWanderingHero, type Hero, type GameState } from '../data/gameData';
+import { WANDERING_HERO_TYPES, ZONES, createTerritoryHero, createWanderingHero, type Hero, type GameState } from '../data/gameData';
 import { ResourceSystem_add, ResourceSystem_spend } from './ResourceSystem';
-import { BuildingSystem_getLevel, BuildingSystem_getMaxWanderingHeroes, BuildingSystem_getTerritoryHeroSlots, BuildingSystem_getWanderingSpawnInterval } from './BuildingSystem';
+import { BuildingSystem_getMaxWanderingHeroes, BuildingSystem_getTerritoryHeroSlots, BuildingSystem_getWanderingSpawnInterval } from './BuildingSystem';
 
 // ═══════════════════════════════════════════════════════════════
 // HERO SYSTEM
@@ -178,7 +178,6 @@ export function HeroSystem_processExplorationTick(zoneId: number): { zoneId: num
       const eHp = 30 + zone.difficulty * 25 + hero.level * 5;
       const eAtk = 3 + zone.difficulty * 4 + hero.level * 2;
       const eDef = 2 + zone.difficulty * 3 + hero.level * 2;
-      const eName = ['Goblin Scout', 'Forest Orc', 'Mine Golem', 'Swamp Beast', 'Ancient Dragon'][zone.id - 1] || 'Enemy';
       let hHp = hero.hp;
       let eHp2 = eHp;
       for (let r = 0; r < 10 && hHp > 0 && eHp2 > 0; r++) {

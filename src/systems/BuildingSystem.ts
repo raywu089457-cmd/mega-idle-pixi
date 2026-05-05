@@ -12,9 +12,10 @@ interface BuildingState {
 let buildingStates: Record<string, BuildingState> = {};
 
 export function BuildingSystem_init(savedState?: GameState): void {
-  const saved = savedState?.buildings || {};
-  for (const [id, def] of Object.entries({ monument: { level: 1 }, tavern: { level: 1 }, weaponShop: { level: 1 }, potionShop: { level: 1 }, armorShop: { level: 1 } })) {
-    buildingStates[id] = { level: saved[id]?.level ?? def.level };
+  const saved = savedState?.buildings as Record<string, { level: number }> | undefined;
+  const defaults = { monument: { level: 1 }, tavern: { level: 1 }, weaponShop: { level: 1 }, potionShop: { level: 1 }, armorShop: { level: 1 } };
+  for (const [id, def] of Object.entries(defaults)) {
+    buildingStates[id] = { level: saved?.[id]?.level ?? def.level };
   }
 }
 

@@ -1,4 +1,4 @@
-import { Application, Container, Graphics, Text, TextStyle, Sprite, Assets } from 'pixi.js';
+import { Application } from 'pixi.js';
 
 // ═══════════════════════════════════════════════════════════════
 // PIXI APPLICATION FACTORY
@@ -25,12 +25,6 @@ export async function createPixiApp(canvas: HTMLCanvasElement): Promise<Applicat
     autoDensity: true,
     antialias: true,
   });
-
-  // Scale to fit viewport while maintaining aspect
-  const scale = Math.min(
-    window.innerWidth / GAME_WIDTH,
-    window.innerHeight / app.screen.height
-  );
 
   return app;
 }
