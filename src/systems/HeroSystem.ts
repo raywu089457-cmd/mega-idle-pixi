@@ -199,7 +199,7 @@ export function HeroSystem_processExplorationTick(zoneId: number): { zoneId: num
         let mSD = 0;
         if (Math.random() < zone.magicStoneChance) {
           mSD = Math.floor(Math.random() * 3) + 1;
-          ResourceSystemAdd('magicStones', mSD);
+          ResourceSystem_add('magicStones', mSD);
         }
         hero.hp = Math.max(1, hHp);
         return { zoneId, goldReward: goldR, materials: matD, magicStones: mSD };
@@ -242,15 +242,19 @@ export function HeroSystem_processExplorationTick(zoneId: number): { zoneId: num
   return null;
 }
 
-function ResourceSystemAdd(id: string, amount: number): number {
-  return ResourceSystem_add(id, amount);
-}
-
 export function HeroSystem_processRestingTick(): void {
   for (const h of territoryHeroes.filter(x => x.status === 'resting')) {
     h.hp = Math.min(h.maxHp, h.hp + Math.ceil(h.maxHp * 0.001));
     if (h.hp >= h.maxHp * 0.8) h.status = 'idle';
   }
+}
+
+export function HeroSystem_getNextWanderingSpawnIn(): number {
+  return nextWanderingSpawnIn;
+}
+
+export function HeroSystem_setNextWanderingSpawnIn(v: number): void {
+  nextWanderingSpawnIn = v;
 }
 
 export function HeroSystem_addListener(cb: (event: { type: string; hero?: Hero; data?: unknown }) => void): void {

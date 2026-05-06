@@ -189,7 +189,7 @@ export function getDefaultGameState() {
   return {
     version: 1,
     lastOnline: Date.now(),
-    resources: { gold: 500, magicStones: 0, fruitPoor: 0, waterDirty: 0, woodRotten: 0, ironRustty: 0, herbLow: 0 },
+    resources: { gold: 500, magicStones: 0, fruitPoor: 0, waterDirty: 0, woodRotten: 0, ironRusty: 0, herbLow: 0 },
     heroes: [] as Hero[],
     wanderingHeroes: [] as Hero[],
     buildings: { monument: { level: 1 }, tavern: { level: 1 }, weaponShop: { level: 1 }, potionShop: { level: 1 }, armorShop: { level: 1 } },

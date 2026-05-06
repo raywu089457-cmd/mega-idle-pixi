@@ -2,7 +2,16 @@ import { Application, Container, Graphics, Text, TextStyle } from 'pixi.js';
 import { createPixiApp, GAME_WIDTH } from './PixiApp';
 import { ResourceSystem_init, ResourceSystem_produceMaterials, ResourceSystem_get } from './systems/ResourceSystem';
 import { BuildingSystem_init, BuildingSystem_getLevel } from './systems/BuildingSystem';
-import { HeroSystem_init, HeroSystem_addTerritoryHero, HeroSystem_processWanderingTick, HeroSystem_processRestingTick } from './systems/HeroSystem';
+import { HeroSystem_init, HeroSystem_addTerritoryHero, HeroSystem_processWanderingTick, HeroSystem_processRestingTick, HeroSystem_trainHero, HeroSystem_getRecruitCost, HeroSystem_sendToExplore, HeroSystem_processExplorationTick } from './systems/HeroSystem';
+import { MapSystem_init, MapSystem_processExplorations } from './systems/MapSystem';
+import { ShopSystem_init, ShopSystem_processAutoProduction } from './systems/ShopSystem';
+import { SaveManager_save, SaveManager_load } from './systems/SaveManager';
+import { OfflineSystem_init, OfflineSystem_markOffline, OfflineSystem_markOnline } from './systems/OfflineSystem';
+import { ResourcePanel } from './rendering/panels/ResourcePanel';
+import { HeroPanel } from './rendering/panels/HeroPanel';
+import { BuildingPanel } from './rendering/panels/BuildingPanel';
+import { MapPanel } from './rendering/panels/MapPanel';
+import { ShopPanel } from './rendering/panels/ShopPanel';
 import { createTerritoryHero } from './data/gameData';
 
 // ═══════════════════════════════════════════════════════════════
@@ -291,6 +300,12 @@ let floatRenderer: FloatNumberRenderer;
 let castleScene: CastleScene;
 let hud: HUD;
 let bottomNav: BottomNav;
+let resourcePanel: ResourcePanel;
+let heroPanel: HeroPanel;
+let buildingPanel: BuildingPanel;
+let mapPanel: MapPanel;
+let shopPanel: ShopPanel;
+let activePanel: Container | null = null;
 
 async function init() {
   const canvas = document.getElementById('game-canvas') as HTMLCanvasElement;
@@ -298,14 +313,43 @@ async function init() {
 
   app = await createPixiApp(canvas);
 
-  // Initialize game systems
-  ResourceSystem_init();
-  BuildingSystem_init();
-  HeroSystem_init();
+  // Load saved state
+  const savedState = SaveManager_load();
 
-  // Add starter hero
-  const starter = createTerritoryHero('warrior', 'Sir Aldric', 1);
-  if (starter) HeroSystem_addTerritoryHero(starter);
+  // Initialize systems with saved state
+  OfflineSystem_init(savedState ?? undefined);
+  ResourceSystem_init();
+  BuildingSystem_init(savedState ?? undefined);
+  MapSystem_init(savedState ?? undefined);
+  ShopSystem_init(savedState ?? undefined);
+  HeroSystem_init(savedState ?? undefined);
+
+  // Add starter hero if no save
+  if (!savedState) {
+    const starter = createTerritoryHero('warrior', 'Sir Aldric', 1);
+    if (starter) HeroSystem_addTerritoryHero(starter);
+  }
+
+  // Panels (created but hidden initially)
+  resourcePanel = new ResourcePanel();
+  resourcePanel.visible = false;
+  app.stage.addChild(resourcePanel);
+
+  heroPanel = new HeroPanel();
+  heroPanel.visible = false;
+  app.stage.addChild(heroPanel);
+
+  buildingPanel = new BuildingPanel();
+  buildingPanel.visible = false;
+  app.stage.addChild(buildingPanel);
+
+  mapPanel = new MapPanel();
+  mapPanel.visible = false;
+  app.stage.addChild(mapPanel);
+
+  shopPanel = new ShopPanel();
+  shopPanel.visible = false;
+  app.stage.addChild(shopPanel);
 
   // HUD
   hud = new HUD();
@@ -316,7 +360,6 @@ async function init() {
   app.stage.addChild(castleScene);
 
   castleScene.onClick(() => {
-    // Castle click spawns floating number for gold (removed in new version)
     floatRenderer.spawn('+0', GAME_WIDTH / 2, 300);
   });
 
@@ -327,6 +370,65 @@ async function init() {
   bottomNav = new BottomNav();
   app.stage.addChild(bottomNav);
 
+  // Panel navigation
+  bottomNav.onNavigate = (panel) => {
+    if (activePanel) activePanel.visible = false;
+    activePanel = null;
+
+    switch (panel) {
+      case 'res':
+        activePanel = resourcePanel;
+        break;
+      case 'hero':
+        activePanel = heroPanel;
+        break;
+      case 'build':
+        activePanel = buildingPanel;
+        break;
+      case 'map':
+        activePanel = mapPanel;
+        break;
+      case 'shop':
+        activePanel = shopPanel;
+        break;
+    }
+
+    if (activePanel) {
+      activePanel.visible = true;
+      (activePanel as unknown as { update(): void }).update();
+    }
+  };
+
+  // Track selected zone for hero dispatch
+  let selectedZone = 1;
+
+  // Map panel: update selected zone when user clicks a zone
+  mapPanel.onZoneSelect = (zoneId: number) => {
+    selectedZone = zoneId;
+  };
+
+  // Hero panel callbacks
+  heroPanel.onTrain = (heroId: string) => {
+    const cost = HeroSystem_getRecruitCost(heroId) * 1.5;
+    HeroSystem_trainHero(heroId, { gold: Math.floor(cost) });
+    heroPanel.update();
+  };
+
+  heroPanel.onDispatch = (heroId: string) => {
+    HeroSystem_sendToExplore(heroId, selectedZone);
+    heroPanel.update();
+  };
+
+  // Building panel callbacks
+  buildingPanel.onUpgrade = () => {
+    buildingPanel.update();
+  };
+
+  // Shop panel callbacks
+  shopPanel.onCraft = () => {
+    shopPanel.update();
+  };
+
   // Game loop
   app.ticker.add((ticker) => {
     const dt = ticker.deltaTime;
@@ -334,7 +436,6 @@ async function init() {
     castleScene.update(dt);
     floatRenderer.update(dt);
 
-    // Update HUD every frame
     hud.update(
       ResourceSystem_get('gold'),
       ResourceSystem_get('magicStones'),
@@ -346,6 +447,8 @@ async function init() {
         herbLow: ResourceSystem_get('herbLow'),
       }
     );
+
+    if (activePanel) (activePanel as unknown as { update(): void }).update();
   });
 
   // Game tick (1 second interval)
@@ -356,6 +459,14 @@ async function init() {
     ResourceSystem_produceMaterials(mLv);
     HeroSystem_processWanderingTick();
     HeroSystem_processRestingTick();
+    for (let z = 1; z <= 5; z++) HeroSystem_processExplorationTick(z);
+    MapSystem_processExplorations();
+    ShopSystem_processAutoProduction();
+
+    // Auto-save every 30 seconds
+    if (tickCount % 30 === 0) {
+      SaveManager_save();
+    }
 
     // Spawn floating numbers for material production
     const mats = {
@@ -374,6 +485,19 @@ async function init() {
       }
     });
   }, 1000);
+
+  // Offline progress on return
+  document.addEventListener('visibilitychange', () => {
+    if (document.hidden) {
+      OfflineSystem_markOffline();
+      SaveManager_save();
+    } else {
+      const summary = OfflineSystem_markOnline();
+      if (summary && summary.cappedSeconds > 0) {
+        console.log(`[Offline] Earned ${summary.goldProduced} gold and materials in ${summary.cappedSeconds}s`);
+      }
+    }
+  });
 
   console.log('[Game] PixiJS game initialized!');
 }
