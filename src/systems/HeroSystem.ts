@@ -257,6 +257,58 @@ export function HeroSystem_setNextWanderingSpawnIn(v: number): void {
   nextWanderingSpawnIn = v;
 }
 
+export function HeroSystem_processWanderingOffline(cappedSeconds: number): {
+  goldProduced: number;
+  magicStonesProduced: number;
+  heroesSpawned: number;
+  heroesDeparted: number;
+} {
+  const result = { goldProduced: 0, magicStonesProduced: 0, heroesSpawned: 0, heroesDeparted: 0 };
+
+  // Spawn new wandering heroes during offline time
+  const spawnInterval = BuildingSystem_getWanderingSpawnInterval();
+  const maxW = BuildingSystem_getMaxWanderingHeroes();
+  for (let s = 0; s < Math.floor(cappedSeconds / spawnInterval) && wanderingHeroes.length < maxW; s++) {
+    const typeDef = WANDERING_HERO_TYPES[Math.floor(Math.random() * WANDERING_HERO_TYPES.length)];
+    wanderingHeroes.push(createWanderingHero(typeDef));
+    result.heroesSpawned++;
+  }
+
+  // Simulate combat for each wandering hero (expected-value batch)
+  for (let i = wanderingHeroes.length - 1; i >= 0; i--) {
+    const hero = wanderingHeroes[i];
+    const combatRounds = Math.floor(cappedSeconds * 0.9); // 90% combat chance per tick
+    const winRate = 0.7; // heroes generally win vs same-level enemies
+    const victories = Math.max(0, Math.floor(combatRounds * winRate));
+
+    if (victories > 0) {
+      const goldPerWin = 20 + hero.level * 10;
+      const kingdomGold = Math.floor(victories * goldPerWin * 0.2);
+      ResourceSystem_add('gold', kingdomGold);
+      result.goldProduced += kingdomGold;
+
+      const msChance = hero.dropMagicStoneChance ?? 0.1;
+      if (Math.random() < 1 - Math.pow(1 - msChance, victories)) {
+        const stones = Math.floor(Math.random() * 3) + 1;
+        ResourceSystem_add('magicStones', stones);
+        result.magicStonesProduced += stones;
+      }
+    }
+
+    // Determine if hero departs during offline time
+    // Expected lifetime: ~750 ticks (10 state-change cycles × avg 75 ticks/cycle)
+    if (cappedSeconds > 120) {
+      const survivalChance = Math.pow(1 - 1 / 750, cappedSeconds);
+      if (Math.random() > survivalChance) {
+        wanderingHeroes.splice(i, 1);
+        result.heroesDeparted++;
+      }
+    }
+  }
+
+  return result;
+}
+
 export function HeroSystem_addListener(cb: (event: { type: string; hero?: Hero; data?: unknown }) => void): void {
   heroListeners.push(cb);
 }

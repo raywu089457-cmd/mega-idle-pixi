@@ -494,7 +494,10 @@ async function init() {
     } else {
       const summary = OfflineSystem_markOnline();
       if (summary && summary.cappedSeconds > 0) {
-        console.log(`[Offline] Earned ${summary.goldProduced} gold and materials in ${summary.cappedSeconds}s`);
+        console.log(`[Offline] Away ${summary.cappedSeconds}s — ` +
+          `Gold: +${summary.heroExplorationGold}(explore) +${summary.heroWanderingGold}(wander) ` +
+          `flat: ${summary.goldProduced - summary.heroExplorationGold - summary.heroWanderingGold}, ` +
+          `Zones cleared: ${summary.zonesCleared}, Heroes healed: ${summary.heroesHealed}`);
       }
     }
   });
