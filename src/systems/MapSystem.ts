@@ -104,6 +104,17 @@ export function MapSystem_processExplorations(): ActiveExploration[] {
   return completed;
 }
 
+export function MapSystem_completeZone(zoneId: number): void {
+  if (!mapProgress.clearedZones.includes(zoneId)) {
+    mapProgress.clearedZones.push(zoneId);
+  }
+  const nextZ = ZONES.find(z => z.id === zoneId + 1);
+  if (nextZ && !mapProgress.unlockedZones.includes(nextZ.id)) {
+    mapProgress.unlockedZones.push(nextZ.id);
+    mapProgress.currentZone = nextZ.id;
+  }
+}
+
 export function MapSystem_addListener(cb: (event: { type: string; data?: unknown }) => void): void {
   mapListeners.push(cb);
 }

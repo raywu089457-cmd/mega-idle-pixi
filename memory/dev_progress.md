@@ -7,7 +7,7 @@ metadata:
 
 # Development Progress — mega-idle-pixi
 
-> 最後更新: 2026-05-30 (修復離線探索每 tick 戰鬥獎勵遺漏)
+> 最後更新: 2026-05-30 (修復離線系統 Bug — 初始載入離線計算 + 區域完成處理)
 
 ## 總覽
 
@@ -22,9 +22,9 @@ metadata:
 | 資源系統 | `ResourceSystem.ts` (109行) | ✅ 完整，含 CRUD、容量管理、監聽事件 |
 | 建築系統 | `BuildingSystem.ts` (81行) | ✅ 完整，5種建築、升級、成本計算 |
 | 英雄系統 | `HeroSystem.ts` (310行) | ✅ 完整，含離線戰鬥模擬 `processWanderingOffline` |
-| 地圖系統 | `MapSystem.ts` (112行) | ✅ 完整，5區探索、解鎖連鎖 |
+| 地圖系統 | `MapSystem.ts` (122行) | ✅ 完整，5區探索、解鎖連鎖、離線區域完成 |
 | 商店系統 | `ShopSystem.ts` (49行) | ✅ 完整，5種物品製作、自動生產 |
-| 離線系統 | `OfflineSystem.ts` (181行) | ✅ 完整，8小時離線推估、英雄探索/戰鬥/休息模擬 |
+| 離線系統 | `OfflineSystem.ts` (228行) | ✅ 完整，8小時離線推估、英雄探索/戰鬥/休息模擬、初始載入處理 |
 | 存檔系統 | `SaveManager.ts` (53行) | ✅ 完整，localStorage 每30秒自動存 |
 | 遊戲資料 | `gameData.ts` (203行) | ✅ 完整，所有靜態定義 |
 
@@ -42,7 +42,7 @@ metadata:
 
 | 元件 | 檔案 | 狀態 |
 |------|------|------|
-| 主遊戲迴圈 | `main.ts` (507行) | ✅ 完整，每秒 tick、30秒存檔 |
+| 主遊戲迴圈 | `main.ts` (522行) | ✅ 完整，每秒 tick、30秒存檔、初始離線處理 |
 | PixiJS 應用 | `PixiApp.ts` (32行) | ✅ 完整 |
 | 城堡動畫 | `main.ts` (CastleScene) | ✅ 浮動動畫 + 點擊回饋 |
 | 浮動數字 | `main.ts` (FloatNumberRenderer) | ✅ 飄出效果 |
@@ -58,6 +58,14 @@ metadata:
 | GitHub Actions (deploy.yml) | ✅ 部署到 Pages |
 | .gitignore | ✅ |
 
+### ✅ 已修復的 Bugs
+
+| 問題 | 修復 |
+|------|------|
+| **重開網頁英雄卡住** | 新增 `OfflineSystem_processInitialOffline()` 在 init() 中呼叫，初始頁面載入時正確處理離線時間 — 推進探索進度、套用戰鬥傷害、給予戰鬥獎勵 |
+| **離線區域未標記完成** | 新增 `MapSystem_completeZone()` 在離線模擬中呼叫，區域完成後標記為已清除、解鎖下一個區域 |
+| **離線探索缺少每 tick 戰鬥獎勵** | `simulateOfflineHeroes` 新增每 tick 戰鬥勝場估算（金幣/材料/魔法石）|
+
 ### ❌ 未實作 / 已知問題
 
 | 項目 | 說明 |
@@ -70,7 +78,6 @@ metadata:
 | **英雄自動派遣** | 目前需手動點出征按鈕 |
 | **魔法石系統** | 已定義但選取/使用 UI 不完整 |
 | **E2E 測試** | Playwright 已安裝但無測試案例 |
-| **離線英雄模擬** | 離線時領土英雄探索獎勵、流浪英雄戰鬥獎勵、英雄休息恢復 ✅ |
 | **招募動畫** | 無動畫回饋 |
 
 ## Git History

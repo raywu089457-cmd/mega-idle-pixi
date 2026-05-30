@@ -1,5 +1,6 @@
 import { MATERIAL_TYPES, ZONES, type GameState } from '../data/gameData';
 import { ResourceSystem_add } from './ResourceSystem';
+import { MapSystem_completeZone } from './MapSystem';
 import { HeroSystem_getTerritoryHero, HeroSystem_getTerritoryHeroes, HeroSystem_processWanderingOffline } from './HeroSystem';
 
 // ═══════════════════════════════════════════════════════════════
@@ -79,6 +80,19 @@ export function OfflineSystem_markOnline(): OfflineSummary | null {
     return null;
   }
   const summary = OfflineSystem_calculateOfflineProgress(Date.now());
+  isOffline = false;
+  return summary;
+}
+
+/** Called on initial page load (not visibilitychange) to process offline time */
+export function OfflineSystem_processInitialOffline(): OfflineSummary | null {
+  const now = Date.now();
+  const away = Math.floor((now - lastOnlineTimestamp) / 1000);
+  if (away < 60) {
+    isOffline = false;
+    return null;
+  }
+  const summary = OfflineSystem_calculateOfflineProgress(now);
   isOffline = false;
   return summary;
 }
@@ -183,6 +197,14 @@ function simulateOfflineHeroes(cappedSeconds: number): HeroOfflineResult {
 
         if (hero.hp <= 1) {
           hero.status = 'resting';
+          hero.currentZone = null;
+          hero.explorationProgress = 0;
+        }
+
+        // After combat processed: if zone was completed, mark cleared and set hero idle
+        if (completions > 0) {
+          MapSystem_completeZone(zone.id);
+          hero.status = 'idle';
           hero.currentZone = null;
           hero.explorationProgress = 0;
         }

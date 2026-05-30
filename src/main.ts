@@ -6,7 +6,7 @@ import { HeroSystem_init, HeroSystem_addTerritoryHero, HeroSystem_processWanderi
 import { MapSystem_init, MapSystem_processExplorations } from './systems/MapSystem';
 import { ShopSystem_init, ShopSystem_processAutoProduction } from './systems/ShopSystem';
 import { SaveManager_save, SaveManager_load } from './systems/SaveManager';
-import { OfflineSystem_init, OfflineSystem_markOffline, OfflineSystem_markOnline } from './systems/OfflineSystem';
+import { OfflineSystem_init, OfflineSystem_markOffline, OfflineSystem_markOnline, OfflineSystem_processInitialOffline } from './systems/OfflineSystem';
 import { ResourcePanel } from './rendering/panels/ResourcePanel';
 import { HeroPanel } from './rendering/panels/HeroPanel';
 import { BuildingPanel } from './rendering/panels/BuildingPanel';
@@ -328,6 +328,19 @@ async function init() {
   if (!savedState) {
     const starter = createTerritoryHero('warrior', 'Sir Aldric', 1);
     if (starter) HeroSystem_addTerritoryHero(starter);
+  }
+
+  // Process offline time on initial page load (not visibilitychange)
+  const offlineSummary = OfflineSystem_processInitialOffline();
+  if (offlineSummary && offlineSummary.cappedSeconds > 0) {
+    console.log(
+      `[Offline] Welcome back! Away ${offlineSummary.cappedSeconds}s ` +
+      `(${offlineSummary.totalSeconds > offlineSummary.cappedSeconds ? 'capped' : 'full'}) — ` +
+      `Gold: +${offlineSummary.heroExplorationGold}(explore) +${offlineSummary.heroWanderingGold}(wander) ` +
+      `flat: +${offlineSummary.goldProduced - offlineSummary.heroExplorationGold - offlineSummary.heroWanderingGold}, ` +
+      `Materials: ${JSON.stringify(offlineSummary.materialsProduced)}, ` +
+      `Zones cleared: ${offlineSummary.zonesCleared}, Heroes healed: ${offlineSummary.heroesHealed}`
+    );
   }
 
   // Panels (created but hidden initially)
