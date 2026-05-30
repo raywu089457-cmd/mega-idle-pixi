@@ -1,6 +1,7 @@
 import { WANDERING_HERO_TYPES, ZONES, createTerritoryHero, createWanderingHero, type Hero, type GameState } from '../data/gameData';
 import { ResourceSystem_add, ResourceSystem_spend } from './ResourceSystem';
 import { BuildingSystem_getMaxWanderingHeroes, BuildingSystem_getTerritoryHeroSlots, BuildingSystem_getWanderingSpawnInterval } from './BuildingSystem';
+import { MapSystem_completeZone } from './MapSystem';
 
 // ═══════════════════════════════════════════════════════════════
 // HERO SYSTEM
@@ -220,6 +221,8 @@ export function HeroSystem_processExplorationTick(zoneId: number): { zoneId: num
       h.currentZone = null;
       h.explorationProgress = 0;
     });
+    // Mark zone as cleared and unlock next zone
+    MapSystem_completeZone(zoneId);
     const gR = zone.rewards.gold.min + Math.floor(Math.random() * (zone.rewards.gold.max - zone.rewards.gold.min));
     ResourceSystem_add('gold', gR);
     const matD: Record<string, number> = {};

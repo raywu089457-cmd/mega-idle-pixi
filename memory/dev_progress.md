@@ -7,7 +7,7 @@ metadata:
 
 # Development Progress — mega-idle-pixi
 
-> 最後更新: 2026-05-30 (修復離線系統 Bug — 初始載入離線計算 + 區域完成處理)
+> 最後更新: 2026-05-30 (修復探索區域完成後 `mapProgress` 未更新 — `HeroSystem_processExplorationTick` 加 `MapSystem_completeZone`)
 
 ## 總覽
 
@@ -62,9 +62,10 @@ metadata:
 
 | 問題 | 修復 |
 |------|------|
-| **重開網頁英雄卡住** | 新增 `OfflineSystem_processInitialOffline()` 在 init() 中呼叫，初始頁面載入時正確處理離線時間 — 推進探索進度、套用戰鬥傷害、給予戰鬥獎勵 |
+| **重開網頁英雄卡住（root cause）** | `HeroSystem_processExplorationTick()` 完成區域後只設英雄 idle，從未更新 `mapProgress`。依賴的 `MapSystem_processExplorations()` 需要 `activeExplorations`，但該陣列在 `MapSystem_init()` 被清空。修復：`processExplorationTick` 在 `expData >= 100` 時直接呼叫 `MapSystem_completeZone()` |
 | **離線區域未標記完成** | 新增 `MapSystem_completeZone()` 在離線模擬中呼叫，區域完成後標記為已清除、解鎖下一個區域 |
 | **離線探索缺少每 tick 戰鬥獎勵** | `simulateOfflineHeroes` 新增每 tick 戰鬥勝場估算（金幣/材料/魔法石）|
+| **初始頁面載入未處理離線時間** | 新增 `OfflineSystem_processInitialOffline()` 在 `init()` 中呼叫，離線時間的探索進度/戰鬥傷害/獎勵全部正確套用 |
 
 ### ❌ 未實作 / 已知問題
 
